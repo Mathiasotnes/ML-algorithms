@@ -6,10 +6,10 @@ import pandas as pd
 
 class LogisticRegression:
     
-    def __init__(self):
-        self.weights = np.random.randn(3) * 0.01
-        self.alpha = 0.1
-        self.epochs = 100
+    def __init__(self, alpha, epochs, input_dimention):
+        self.weights = np.random.randn(input_dimention+1) * 0.01
+        self.alpha = alpha
+        self.epochs = epochs
         
     def fit(self, X, y):
         """
