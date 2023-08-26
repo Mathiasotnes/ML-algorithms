@@ -6,10 +6,10 @@ import pandas as pd
 
 class LogisticRegression:
     
-    def __init__():
-        # NOTE: Feel free add any hyperparameters 
-        # (with defaults) as you see fit
-        pass
+    def __init__(self):
+        self.weights = np.random.randn(3) * 0.01
+        self.alpha = 0.1
+        self.epochs = 100
         
     def fit(self, X, y):
         """
@@ -22,7 +22,22 @@ class LogisticRegression:
                 m binary 0.0/1.0 labels
         """
         # TODO: Implement
-        raise NotImplemented()
+
+        # Batch gradient descent function:
+
+        m = len(X)
+        X = np.c_[np.ones(m), np.array(X)] # Adding bias column
+
+        for i in range(self.epochs):
+
+            # Cost function:    
+            predictions = np.dot(X, self.weights)
+            predictions = sigmoid(predictions)
+            error = y - predictions
+            lms = np.dot(error, X)
+
+            # Update weights
+            self.weights = self.weights + self.alpha * lms
     
     def predict(self, X):
         """
@@ -38,8 +53,10 @@ class LogisticRegression:
             A length m array of floats in the range [0, 1]
             with probability-like predictions
         """
-        # TODO: Implement
-        raise NotImplemented()
+        m = len(X)
+        X = np.c_[np.ones(m), X] # Adding bias column
+
+        return sigmoid(np.dot(X, self.weights))
         
 
         
@@ -96,5 +113,3 @@ def sigmoid(x):
         Element-wise sigmoid activations of the input 
     """
     return 1. / (1. + np.exp(-x))
-
-        
