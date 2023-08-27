@@ -6,12 +6,12 @@ import pandas as pd
 
 class KMeans:
     
-    def __init__():
-        # NOTE: Feel free add any hyperparameters 
-        # (with defaults) as you see fit
-        pass
+    def __init__(self, n_dimentions, n_centroids):
+        self.dimentions = n_dimentions
+        self.centroids = np.random.rand(n_centroids, n_dimentions)
+        #self.centroids = np.array([[0.2, 0.5], [0.8, 0.5]])
         
-    def fit(self, X):
+    def fit(self, X, iterations):
         """
         Estimates parameters for the classifier
         
@@ -19,8 +19,24 @@ class KMeans:
             X (array<m,n>): a matrix of floats with
                 m rows (#samples) and n columns (#features)
         """
-        # TODO: Implement
-        raise NotImplemented()
+        # Converting from dataframe to tensor
+        X = np.array(X)
+
+        # Iterations of K-means algorithm
+        for _ in range(iterations):
+
+            # Find distances to all centroids
+            distances = np.array([euclidean_distance(X, centroid) for centroid in self.centroids]).T
+
+            # Assign centroids to input coordinates
+            assigned_centroids = np.argmin(distances, axis=1)
+                
+            # Center centroids by calculating mean of assigned points
+            for i in range(len(self.centroids)):
+                points_assigned_to_centroid = X[assigned_centroids == i]
+                self.centroids[i] = points_assigned_to_centroid.mean(axis=0)
+
+
     
     def predict(self, X):
         """
@@ -38,8 +54,14 @@ class KMeans:
             there are 3 clusters, then a possible assignment
             could be: array([2, 0, 0, 1, 2, 1, 1, 0, 2, 2])
         """
-        # TODO: Implement 
-        raise NotImplemented()
+
+        # Find distances to all centroids
+        distances = np.array([euclidean_distance(X, centroid) for centroid in self.centroids]).T
+
+        # Assign centroids to input coordinates
+        assigned_centroids = np.argmin(distances, axis=1)
+
+        return assigned_centroids
     
     def get_centroids(self):
         """
@@ -56,7 +78,7 @@ class KMeans:
             [xm_1, xm_2, ..., xm_n]
         ])
         """
-        pass
+        return self.centroids
     
     
     
@@ -111,7 +133,7 @@ def euclidean_distortion(X, z):
     for i, c in enumerate(clusters):
         Xc = X[z == c]
         mu = Xc.mean(axis=0)
-        distortion += ((Xc - mu) ** 2).sum(axis=1)
+        distortion += ((Xc - mu) ** 2).sum()
         
     return distortion
 
