@@ -9,7 +9,6 @@ class KMeans:
     def __init__(self, n_dimentions, n_centroids):
         self.dimentions = n_dimentions
         self.centroids = np.random.rand(n_centroids, n_dimentions)
-        #self.centroids = np.array([[0.2, 0.5], [0.8, 0.5]])
         
     def fit(self, X, iterations):
         """
@@ -22,21 +21,28 @@ class KMeans:
         # Converting from dataframe to tensor
         X = np.array(X)
 
+        ##### SPREAD INITIALIZATION #####
+
+        # Initializing even spread of centroids (works semi-good)
+        centroids = self.spread_initialization(X, self.dimentions, len(self.centroids))
+
         # Iterations of K-means algorithm
-        for _ in range(iterations):
+        centroids = self.kmeans(iterations, X, centroids)
 
-            # Find distances to all centroids
-            distances = np.array([euclidean_distance(X, centroid) for centroid in self.centroids]).T
+        self.centroids = centroids
+        
+        ##### K_MEANS ++ INITIALIZATION #####
 
-            # Assign centroids to input coordinates
-            assigned_centroids = np.argmin(distances, axis=1)
-                
-            # Center centroids by calculating mean of assigned points
-            for i in range(len(self.centroids)):
-                points_assigned_to_centroid = X[assigned_centroids == i]
-                self.centroids[i] = points_assigned_to_centroid.mean(axis=0)
+        # for _ in range(iterations):
 
+        #     centroids = self.kmeans_plusplus_initialization(X, len(self.centroids))
+        #     centroids = self.kmeans(10, X, centroids)
 
+        #     old_distortion = euclidean_distortion(X, self.predict(X))
+        #     new_distortion = euclidean_distortion(X, self.predict_centroids(X, centroids))
+
+        #     if old_distortion > new_distortion:
+        #         self.centroids = centroids
     
     def predict(self, X):
         """
@@ -63,6 +69,31 @@ class KMeans:
 
         return assigned_centroids
     
+    def predict_centroids(self, X, centroids):
+        """
+        Generates predictions
+        
+        Note: should be called after .fit()
+        
+        Args:
+            X (array<m,n>): a matrix of floats with 
+                m rows (#samples) and n columns (#features)
+            
+        Returns:
+            A length m integer array with cluster assignments
+            for each point. E.g., if X is a 10xn matrix and 
+            there are 3 clusters, then a possible assignment
+            could be: array([2, 0, 0, 1, 2, 1, 1, 0, 2, 2])
+        """
+
+        # Find distances to all centroids
+        distances = np.array([euclidean_distance(X, centroid) for centroid in centroids]).T
+
+        # Assign centroids to input coordinates
+        assigned_centroids = np.argmin(distances, axis=1)
+
+        return assigned_centroids
+    
     def get_centroids(self):
         """
         Returns the centroids found by the K-mean algorithm
@@ -78,7 +109,82 @@ class KMeans:
             [xm_1, xm_2, ..., xm_n]
         ])
         """
-        return self.centroids
+        return np.array(self.centroids)
+
+    def kmeans(self, iterations, X, centroids):
+        """
+        Runs k_means algorithm iteration number of timer and returns
+        the centroids
+        """
+
+        for _ in range(iterations):
+    
+            # Find distances to all centroids
+            distances = np.array([euclidean_distance(X, centroid) for centroid in centroids]).T
+
+            # Assign centroids to input coordinates
+            assigned_centroids = np.argmin(distances, axis=1)
+                
+            # Center centroids by calculating mean of assigned points
+            for i in range(len(centroids)):
+                points_assigned_to_centroid = X[assigned_centroids == i]
+                centroids[i] = points_assigned_to_centroid.mean(axis=0)
+        
+        return centroids
+
+    def spread_initialization(self, X, n_dimensions, n_centroids):
+        """
+        Returns n_centroids evenly spread centroids in a 
+        circle with a standard deviations radius based 
+        on dataset.
+        """
+
+        if n_dimensions != 2:
+            raise ValueError("The spread_centroids function currently only supports 2D data.")
+
+        centroids = [[0] * n_dimensions for _ in range(n_centroids)]
+
+        center_x = np.mean(X[:, 0])  # Mean of the first dimension
+        center_y = np.mean(X[:, 1])  # Mean of the second dimension
+
+        # Getting the standard deviations for both dimensions
+        std_x = np.std(X[:, 0])
+        std_y = np.std(X[:, 1])
+
+        # Using the average of the two standard deviations for the radius
+        radius = np.mean([std_x, std_y])
+
+        theta = 2 * np.pi / n_centroids  # Angle between centroids
+
+        for i in range(n_centroids):
+            centroids[i] = [center_x + radius * np.cos(i * theta), center_y + radius * np.sin(i * theta)]
+
+        return centroids
+
+    def kmeans_plusplus_initialization(self, X, k):
+        """
+        KMeans++ initialization for KMeans algorithm.
+        Args:
+            X (numpy array): Data points of shape (num_samples, num_features)
+            k (int): Number of centroids to initialize
+        Returns:
+            centroids (numpy array): Initialized centroids
+        """
+        # Randomly choose the first centroid
+        centroids = [X[np.random.choice(X.shape[0])]]
+        
+        for _ in range(1, k):
+            # Calculate the squared distances from the last centroid picked
+            squared_distances = np.array([np.min([np.inner(c-x,c-x) for c in centroids]) for x in X])
+            
+            # Choose the next centroid with probability proportional to squared distance
+            prob = squared_distances/squared_distances.sum()
+            next_centroid = X[np.random.choice(X.shape[0], p=prob)]
+            centroids.append(next_centroid)
+        
+        return np.array(centroids)
+
+
     
     
     
